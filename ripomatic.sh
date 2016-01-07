@@ -76,3 +76,4 @@ for c in $tracks; do
 	#increment n for next real episode name rather than track name
 	let n++; 
 done
+eject $INPUT_DEV
