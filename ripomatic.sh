@@ -1,11 +1,19 @@
 #!/bin/bash
+INPUT_DEV=/dev/sr0
+OUTPUT_FOLDER=`pwd`
+SERIES=01
+STARTS_FROM=01
+MINLENGTH="900"
+PRESET="Normal Profile"
+
 while [[ $# > 1 ]]
 do
 key="$1"
    
+
 case $key in
       -h) 
-         echo "Usage: $0 [-i input file] [-o output folder] [-se series number] [-sf episode names start from] [-m min-length in seconds]"
+         echo "Usage: $0 [-i input file] [-o output folder] [-se series number] [-sf episode names start from] [-m min-length in seconds] [-x for high profile]"
          ;;
       -i)
 	 INPUT_DEV=$2
@@ -27,21 +35,19 @@ case $key in
 	 MINLENGTH=$2
          shift
          ;;
+      -x)
+	 PRESET="High Profile"
+         ;;
       *)
 	 echo unknown option
 	;;
    esac
 shift
 done
-echo $INPUT_DEV; echo $OUTPUT_FOLDER; echo $SERIES; echo $MINLENGTH; echo $STARTS_FROM
+printf "Using the following settings: input device $INPUT_DEV\n output folder: $OUTPUT_FOLDER \n series number $SERIES \n ignore titles less than $MINLENGTH seconds \n episode naming starts from $STARTS_FROM \n Using preset $PRESET\n"
 
 
-#INPUT_DEV=$1
-#OUTPUT_FOLDER=$2
 OUTPUT_NAME=$(makemkvcon -r info | grep "DRV\:0" | cut -f4 -d\")
-#SERIES=$3
-#STARTS_FROM=$4
-#MINLENGTH="900"
 MINLENGTHMS="${MINLENGTH}000"
 
 LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
@@ -60,11 +66,11 @@ echo $n
 for c in $tracks; do
         PREFIX=''
 	# Allows for seasons on multiple DVDs
-       if [ $n -lt  10 ]; then PREFIX="0" ; fi
+       	if [ $n -lt  10 ]; then PREFIX="0" ; fi
 	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"$OUTPUT_NAME-s${SERIES}e$PREFIX$n".m4v"
 	echo "doing track $c"
 	echo $OUTPUT_NAME_TITLE
-        HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "High Profile" > /dev/null 2>&1
+        HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "$PRESET"
 # 	increment n for next real episode name rather than track name
 	let n++; 
 done
