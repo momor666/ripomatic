@@ -72,7 +72,7 @@ for c in $tracks; do
 	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"$OUTPUT_NAME-s${SERIES}e$PREFIX$n".m4v"
 	echo "doing track $c, episode $n"
 	echo $OUTPUT_NAME_TITLE
-        HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "$PRESET"
+        HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "$PRESET" > /dev/null 2&>1
 	#increment n for next real episode name rather than track name
 	let n++; 
 done
