@@ -1,4 +1,6 @@
 #!/bin/bash
+# automatic TV series ripper. needed because some of my discs had a lot of short titles that weren't required.
+# set some sensible defaults
 INPUT_DEV=/dev/sr0
 OUTPUT_FOLDER=`pwd`
 SERIES=01
@@ -39,12 +41,13 @@ case $key in
 	 PRESET="High Profile"
          ;;
       *)
-	 echo unknown option
+	 echo "unknown option"
 	;;
    esac
 shift
 done
-printf "Using the following settings: input device $INPUT_DEV\n output folder: $OUTPUT_FOLDER \n series number $SERIES \n ignore titles less than $MINLENGTH seconds \n episode naming starts from $STARTS_FROM \n Using preset $PRESET\n"
+
+printf "Using the following settings:\n input device $INPUT_DEV \n output folder: $OUTPUT_FOLDER \n series number $SERIES \n ignore titles less than $MINLENGTH seconds \n episode naming starts from $STARTS_FROM \n Using preset $PRESET\n"
 
 
 OUTPUT_NAME=$(makemkvcon -r info | grep "DRV\:0" | cut -f4 -d\")
@@ -54,7 +57,6 @@ LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
 
 # if available get the title and get the number of titles
 TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
-#NOMTITLES=$(echo "$LSDVDOUTPUT" | grep -i Length | wc -l)
 
 # find tracks satisfying minimum length requirements
 tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
@@ -71,6 +73,6 @@ for c in $tracks; do
 	echo "doing track $c"
 	echo $OUTPUT_NAME_TITLE
         HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "$PRESET"
-# 	increment n for next real episode name rather than track name
+	#increment n for next real episode name rather than track name
 	let n++; 
 done
