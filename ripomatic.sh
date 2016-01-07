@@ -40,9 +40,11 @@ case $key in
          ;;
       -x)
 	 PRESET="High Profile"
+	 shift
          ;;
       *)
-	 echo "unknown option"
+	 echo "I don't understand the parameter $1"
+	 exit 0
 	;;
    esac
 shift
@@ -53,13 +55,12 @@ printf "Using the following settings:\n input device $INPUT_DEV \n output folder
 # convert min length to milliseconds
 MINLENGTHMS="${MINLENGTH}000"
 # getting the title
-#LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
-TITLE=$(lsdvd "$INPUT_DEV" | grep -i Disc | sed 's/Disc Title: //g')
-
+LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
+TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
 # find tracks satisfying minimum length requirements
 tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
 
-printf " We will rip tracks $tracks \n"
+echo " We will rip tracks ${tracks//[$'\t\r\n']}:\n" 
 
 let n=$STARTS_FROM
 #cycle through the tracks to rip
@@ -67,11 +68,10 @@ for c in $tracks; do
         PREFIX=''
 	# Allows for seasons on multiple DVDs
        	if [ $n -lt  10 ]; then PREFIX="0" ; fi
-	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"$TITLE-s${SERIES}e$PREFIX$n".m4v"
+	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"${TITLE}-s${SERIES}e$PREFIX$n".m4v"
 	echo "Ripping track $c, episode $n"
 	echo $OUTPUT_NAME_TITLE
-        HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "$PRESET" > /dev/null 2&>1
+        HandBrakeCLI -i $INPUT_DEV -o "$OUTPUT_NAME_TITLE" -t $c --preset "$PRESET" > /dev/null 2&>1
 	#increment n for next real episode name rather than track name
 	let n++; 
 done
-eject $INPUT_DEV
