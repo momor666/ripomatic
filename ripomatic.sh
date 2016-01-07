@@ -50,14 +50,11 @@ done
 
 printf "Using the following settings:\n input device $INPUT_DEV \n output folder: $OUTPUT_FOLDER \n series number $SERIES \n ignore titles less than $MINLENGTH seconds \n episode naming starts from $STARTS_FROM \n Using preset $PRESET\n"
 
-
-OUTPUT_NAME=$(makemkvcon -r info | grep "DRV\:0" | cut -f4 -d\")
+# convert min length to milliseconds
 MINLENGTHMS="${MINLENGTH}000"
-
-LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
-
-# if available get the title and get the number of titles
-TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
+# getting the title
+#LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
+TITLE=$(lsdvd "$INPUT_DEV" | grep -i Disc | sed 's/Disc Title: //g')
 
 # find tracks satisfying minimum length requirements
 tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
@@ -70,7 +67,7 @@ for c in $tracks; do
         PREFIX=''
 	# Allows for seasons on multiple DVDs
        	if [ $n -lt  10 ]; then PREFIX="0" ; fi
-	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"$OUTPUT_NAME-s${SERIES}e$PREFIX$n".m4v"
+	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"$TITLE-s${SERIES}e$PREFIX$n".m4v"
 	echo "Ripping track $c, episode $n"
 	echo $OUTPUT_NAME_TITLE
         HandBrakeCLI -i $INPUT_DEV -o $OUTPUT_NAME_TITLE -t $c --preset "$PRESET" > /dev/null 2&>1
