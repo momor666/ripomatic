@@ -61,7 +61,7 @@ TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
 # find tracks satisfying minimum length requirements
 tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
 
-echo " We will rip tracks $tracks"
+printf "We will rip tracks $tracks"
 
 let n=$STARTS_FROM
 #cycle through the tracks to rip
@@ -76,4 +76,4 @@ for c in $tracks; do
 	#increment n for next real episode name rather than track name
 	let n++; 
 done
-eject $INPUT_DEV
+\eject $INPUT_DEV
