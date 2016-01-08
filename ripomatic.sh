@@ -7,6 +7,8 @@ SERIES=01
 STARTS_FROM=01
 MINLENGTH="900"
 PRESET="Normal Profile"
+OVERRIDE_TRACKS=0
+EJECT=0
 
 while [[ $# > 0 ]]
 do
@@ -15,11 +17,15 @@ key="$1"
 
 case $key in
       -h) 
-         echo "Usage: $0 [-i input file] [-o output folder] [-se series number] [-sf episode names start from] [-m min-length in seconds] [-x for high profile]"
+         echo "Usage: $0 [-i input file] [-o output folder] [-se series number] [-sf episode names start from] [-m min-length in seconds] [-x for high profile] [-e to eject after rip (default is no eject)] [-t only rip specific tracks- space separated list in quotes] "
 	 exit 1
          ;;
       -i)
 	 INPUT_DEV=$2
+         shift
+         ;;
+      -e)
+	 EJECT=1
          shift
          ;;
       -o)
@@ -37,6 +43,11 @@ case $key in
       -m)
 	 MINLENGTH=$2
          shift
+         ;;
+      -t)
+	 OVERRIDE_TRACKS=1
+	 NEW_TRACKS=$2
+	 shift
          ;;
       -x)
 	 PRESET="High Profile"
@@ -58,7 +69,11 @@ MINLENGTHMS="${MINLENGTH}000"
 LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
 TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
 # find tracks satisfying minimum length requirements
-tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
+if [ $OVERRIDE_TRACKS -eq 1 ]; then 
+	tracks="$NEW_TRACKS"
+else
+	tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
+fi
 
 echo " We will rip tracks ${tracks//[$'\t\r\n']}:\n" 
 
@@ -71,7 +86,9 @@ for c in $tracks; do
 	OUTPUT_NAME_TITLE=$OUTPUT_FOLDER"/"${TITLE}-s${SERIES}e$PREFIX$n".m4v"
 	echo "Ripping track $c, episode $n"
 	echo $OUTPUT_NAME_TITLE
-        HandBrakeCLI -i $INPUT_DEV -o "$OUTPUT_NAME_TITLE" -t $c --preset "$PRESET" > /dev/null 2&>1
+        HandBrakeCLI -i $INPUT_DEV -o "$OUTPUT_NAME_TITLE" -t $c --preset "$PRESET" > hb.log 2>&1
 	#increment n for next real episode name rather than track name
 	let n++; 
 done
+if [ $EJECT -eq 1 ]; then eject $INPUT_DEV
+fi
