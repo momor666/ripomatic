@@ -1,5 +1,6 @@
 #!/bin/bash
 # automatic TV series ripper. needed because some of my discs had a lot of short titles that weren't required.
+# note that format shifting AKA ripping may not be legal in your own country. the author accepts no liability for use.
 # set some sensible defaults
 INPUT_DEV=/dev/sr0
 OUTPUT_FOLDER=`pwd`

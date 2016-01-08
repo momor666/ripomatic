@@ -9,4 +9,4 @@ TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
 
 echo " We will rip main feature: $TITLE from $INPUT_DEV to $OUTPUT_FOLDER using $PRESET"
 
-HandBrakeCLI i--main-feature -i $INPUT_DEV -o "$TITLE" --preset "$PRESET" > /dev/null 2&>1
+HandBrakeCLI i--main-feature -i $INPUT_DEV -o "$TITLE".m4v --preset "$PRESET" > /dev/null 2&>1
