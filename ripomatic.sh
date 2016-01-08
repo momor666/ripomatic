@@ -5,7 +5,10 @@ INPUT_DEV=/dev/sr0
 OUTPUT_FOLDER=`pwd`
 SERIES=01
 STARTS_FROM=01
-MINLENGTH="900"
+# 900 is 15 mins
+MINLENGTH="900" 
+# 4200 is 1hr 10 mins
+MAXLENGTH="4200"
 PRESET="Normal Profile"
 OVERRIDE_TRACKS=0
 EJECT=0
@@ -17,11 +20,21 @@ key="$1"
 
 case $key in
       -h) 
-         echo "Usage: $0 [-i input file] [-o output folder] [-se series number] [-sf episode names start from] [-m min-length in seconds] [-x for high profile] [-e to eject after rip (default is no eject)] [-t only rip specific tracks- space separated list in quotes] "
+         printf "Usage: $0 \n Version 1.10\n This tool rips TV series easily from the command line. \n [-i input file (default: $INPUT_DEV)] \n [-o output folder (default: present working directory: $OUTPUT_FOLDER)] \n [-se series number (default: $SERIES)] \n [-sf episode names start from (default: $STARTS_FROM)] \n [--min min-length in seconds (default: $MINLENGTH)] \n [--max exclude titles more than max seconds (default $MAXLENGTH)] \n [-x for high profile (default: $PRESET)] \n [-e to eject after rip (default is no eject)] \n [-t only rip specific tracks- space separated list in quotes (default: rip all that satisfy min and max)] \n [--short use default times for short programme of 30 mins: min 18 mins, max 40] \n [--medium: programme is around 1hr: use defaults of min 40, max 1hr10] \n "
 	 exit 1
          ;;
       -i)
 	 INPUT_DEV=$2
+         shift
+         ;;
+      --short)
+	 MINLENGTH=1080
+	 MAXLENGTH=2400
+         shift
+         ;;
+      --medium)
+	 MINLENGTH=2400
+	 MAXLENGTH=4200
          shift
          ;;
       -e)
@@ -40,8 +53,12 @@ case $key in
 	 STARTS_FROM=$2
          shift
          ;;
-      -m)
+      --min)
 	 MINLENGTH=$2
+         shift
+         ;;
+      --max)
+	 MAXLENGTH=$2
          shift
          ;;
       -t)
@@ -65,17 +82,22 @@ printf "Using the following settings:\n input device $INPUT_DEV \n output folder
 
 # convert min length to milliseconds
 MINLENGTHMS="${MINLENGTH}000"
+MAXLENGTHMS="${MAXLENGTH}000"
+
 # getting the title
 LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
 TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
+
 # find tracks satisfying minimum length requirements
 if [ $OVERRIDE_TRACKS -eq 1 ]; then 
 	tracks="$NEW_TRACKS"
 else
-	tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
+	tracks=$(HandBrakeCLI -t 0 -i $INPUT_DEV 2>&1 |grep 'scan: duration'|grep -n '^'| sort -k 5|while read title; do if (( ${MINLENGTHMS} < $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) && ${MAXLENGTHMS} > $(sed 's/^.*(\([0-9]\+\) ms.*$/\1/g' <<<"$title" ) )); then echo "$title"|awk -F":" '{print $1}'; fi; done|sort -V)
 fi
 
-echo " We will rip tracks ${tracks//[$'\t\r\n']}:\n" 
+#tell the user which tracks we are supposed to rip
+printf " We will rip tracks ${tracks//[$'\n']/,} \n"
+
 
 let n=$STARTS_FROM
 #cycle through the tracks to rip
