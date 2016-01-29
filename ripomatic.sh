@@ -13,6 +13,7 @@ MAXLENGTH="4200"
 PRESET="Normal Profile"
 OVERRIDE_TRACKS=0
 EJECT=0
+ALT_TITLE=""
 
 while [[ $# > 0 ]]
 do
@@ -21,11 +22,15 @@ key="$1"
 
 case $key in
       -h) 
-         printf "Usage: $0 \n Version 1.10\n This tool rips TV series easily from the command line. \n [-i input file (default: $INPUT_DEV)] \n [-o output folder (default: present working directory: $OUTPUT_FOLDER)] \n [-se series number (default: $SERIES)] \n [-sf episode names start from (default: $STARTS_FROM)] \n [--min min-length in seconds (default: $MINLENGTH)] \n [--max exclude titles more than max seconds (default $MAXLENGTH)] \n [-x for high profile (default: $PRESET)] \n [-e to eject after rip (default is no eject)] \n [-t only rip specific tracks- space separated list in quotes (default: rip all that satisfy min and max)] \n [--short use default times for short programme of 30 mins: min 18 mins, max 40] \n [--medium: programme is around 1hr: use defaults of min 40, max 1hr10] \n "
+         printf "Usage: $0 \n Version 1.10\n This tool rips TV series easily from the command line. \n [-i input file (default: $INPUT_DEV)] \n [-o output folder (default: present working directory: $OUTPUT_FOLDER)] \n [-se series number (default: $SERIES)] \n [-sf episode names start from (default: $STARTS_FROM)] \n [--min min-length in seconds (default: $MINLENGTH)] \n [--max exclude titles more than max seconds (default $MAXLENGTH)] \n [-x for high profile (default: $PRESET)] \n [-e to eject after rip (default is no eject)] \n [-t only rip specific tracks- space separated list in quotes (default: rip all that satisfy min and max)] \n [--short use default times for short programme of 30 mins: min 18 mins, max 40] \n [--medium: programme is around 1hr: use defaults of min 40, max 1hr10] \n [-alt Use alternate title: useful when lsdvd doesn't work] \n"
 	 exit 1
          ;;
       -i)
 	 INPUT_DEV=$2
+         shift
+         ;;
+      --alt)
+	 ALT_TITLE=$2
          shift
          ;;
       --short)
@@ -40,7 +45,6 @@ case $key in
          ;;
       -e)
 	 EJECT=1
-         shift
          ;;
       -o)
          OUTPUT_FOLDER=$2
@@ -89,6 +93,15 @@ MAXLENGTHMS="${MAXLENGTH}000"
 LSDVDOUTPUT=$(lsdvd "$INPUT_DEV")
 TITLE=$(echo "$LSDVDOUTPUT" | grep -i Disc | sed 's/Disc Title: //g')
 
+if [ "$TITLE" = "" ] ; then 
+	if [ "$ALT_TITLE" = "" ] ; then
+	   printf "Title not found. Please use alternate title \n"
+	   exit 0
+	else 
+	   printf "Using alternate title of $ALT_TITLE"
+	   TITLE=$ALT_TITLE
+	fi
+fi
 # find tracks satisfying minimum length requirements
 if [ $OVERRIDE_TRACKS -eq 1 ]; then 
 	tracks="$NEW_TRACKS"
