@@ -10,7 +10,7 @@ STARTS_FROM=01
 MINLENGTH="900" 
 # 4200 is 1hr 10 mins
 MAXLENGTH="4200"
-PRESET="Normal Profile"
+PRESET="High Profile"
 OVERRIDE_TRACKS=0
 EJECT=0
 ALT_TITLE=""
@@ -36,12 +36,10 @@ case $key in
       --short)
 	 MINLENGTH=1080
 	 MAXLENGTH=2400
-         shift
          ;;
       --medium)
 	 MINLENGTH=2400
 	 MAXLENGTH=4200
-         shift
          ;;
       -e)
 	 EJECT=1
@@ -73,7 +71,9 @@ case $key in
          ;;
       -x)
 	 PRESET="High Profile"
-	 shift
+         ;;
+      -n)
+	 PRESET="Normal Profile"
          ;;
       *)
 	 echo "I don't understand the parameter $1"
